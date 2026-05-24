@@ -1,6 +1,6 @@
 // extensionBridge.js - Add this to your React/web app
 
-const EXTENSION_ID ="dojlplmnoidnhgodbalbpmbocncaliak" // Replace with actual ID
+const EXTENSION_ID ="aklicpolgbjeiiopochgaodbjpbikbhn" // Replace with actual ID
 
 /**
  * Send a message to the Focus Blocker extension
