@@ -46,17 +46,17 @@ export default function FocusFlowSettings() {
 
   const [duration, setDuration] = useState("25m");
   const [customMin, setCustomMin] = useState("");
-  const [blockStatus, setBlockStatus] = useState("Idle"); // Idle | Blocking | Paused
+  const [blockStatus, setBlockStatus] = useState("Idle");
   const [showSites, setShowSites] = useState(false);
   const [sites, setSites] = useState(DEFAULT_SITES);
   const [newSite, setNewSite] = useState("");
+  const [extError, setExtError] = useState(false);
 
   // Timer state
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [totalSeconds, setTotalSeconds] = useState(null);
   const intervalRef = useRef(null);
 
-  // Compute display time and ring progress
   const displayTime = secondsLeft !== null
     ? formatSeconds(secondsLeft)
     : durToDisplay(duration);
@@ -67,7 +67,6 @@ export default function FocusFlowSettings() {
     : 1;
   const dashOffset = CIRCUMFERENCE * (1 - progress);
 
-  // Tick effect — only runs when Blocking
   useEffect(() => {
     if (blockStatus === "Blocking") {
       intervalRef.current = setInterval(() => {
@@ -84,47 +83,43 @@ export default function FocusFlowSettings() {
     } else {
       clearInterval(intervalRef.current);
     }
-
     return () => clearInterval(intervalRef.current);
   }, [blockStatus]);
 
   const handleStartBlocking = async () => {
     const mins = customMin ? parseInt(customMin) : durToMinutes(duration);
+    if (!mins || mins <= 0) return;
     const secs = mins * 60;
+
+    // Start timer immediately — extension is optional
+    setTotalSeconds(secs);
+    setSecondsLeft(secs);
+    setBlockStatus("Blocking");
+    setExtError(false);
+
     try {
       await extensionAPI.startSession(mins, "Focus Session");
-      setTotalSeconds(secs);
-      setSecondsLeft(secs);
-      setBlockStatus("Blocking");
-    } catch (err) {
-      alert("Extension not found. Make sure Focus Blocker is installed and active.");
+    } catch (_) {
+      setExtError(true); // show subtle warning but don't stop timer
     }
   };
 
   const handleStopBlocking = async () => {
-    try {
-      await extensionAPI.stopSession();
-    } catch (err) {
-      alert("Extension not found. Make sure Focus Blocker is installed and active.");
-    } finally {
-      clearInterval(intervalRef.current);
-      setBlockStatus("Idle");
-      setSecondsLeft(null);
-      setTotalSeconds(null);
-    }
+    clearInterval(intervalRef.current);
+    setBlockStatus("Idle");
+    setSecondsLeft(null);
+    setTotalSeconds(null);
+    setExtError(false);
+    try { await extensionAPI.stopSession(); } catch (_) {}
   };
 
   const handlePause = async () => {
-    try {
-      if (blockStatus === "Paused") {
-        await extensionAPI.resumeSession();
-        setBlockStatus("Blocking"); // triggers useEffect to restart interval
-      } else {
-        await extensionAPI.pauseSession();
-        setBlockStatus("Paused"); // triggers useEffect to clear interval
-      }
-    } catch (err) {
-      alert("Extension not found. Make sure Focus Blocker is installed and active.");
+    if (blockStatus === "Paused") {
+      setBlockStatus("Blocking");
+      try { await extensionAPI.resumeSession(); } catch (_) {}
+    } else {
+      setBlockStatus("Paused");
+      try { await extensionAPI.pauseSession(); } catch (_) {}
     }
   };
 
@@ -222,11 +217,11 @@ export default function FocusFlowSettings() {
               border: `1px solid ${c.border}`, marginBottom: 16,
             }}>
               <div style={{
-                    width: 38, height: 38, background: activeHex + "22", color: activeHex,
-                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 14, fontWeight: 600, flexShrink: 0,
-                  }}>{user?.name?.[0]?.toUpperCase() || 'U'}</div>
-                  <div style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>{user?.name || 'User'}</div>
+                width: 38, height: 38, background: activeHex + "22", color: activeHex,
+                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 600, flexShrink: 0,
+              }}>{user?.name?.[0]?.toUpperCase() || 'U'}</div>
+              <div style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>{user?.name || 'User'}</div>
             </div>
             <button
               onClick={logout}
@@ -266,6 +261,16 @@ export default function FocusFlowSettings() {
                 padding: "3px 10px", borderRadius: 20,
               }}>{blockStatus}</div>
             </div>
+
+            {extError && (
+              <div style={{
+                fontSize: 11, color: "#fbbf24", background: "#fbbf2411",
+                border: "1px solid #fbbf2433", borderRadius: 8,
+                padding: "6px 10px", marginBottom: 12,
+              }}>
+                ⚠ Extension not detected — timer running but sites won't be blocked.
+              </div>
+            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 16, alignItems: "center", marginBottom: 16 }}>
               <div style={{ width: 80, height: 80, position: "relative" }}>
@@ -327,7 +332,6 @@ export default function FocusFlowSettings() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             {blockStatus === "Idle" ? (
               <button onClick={handleStartBlocking} style={{
                 width: "100%", padding: 12, borderRadius: 12, border: "none",
@@ -352,7 +356,6 @@ export default function FocusFlowSettings() {
               </div>
             )}
 
-            {/* Blocked Sites */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               paddingTop: 12, borderTop: `1px solid ${c.border}`, marginBottom: showSites ? 10 : 0,
