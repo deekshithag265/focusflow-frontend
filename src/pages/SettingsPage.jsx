@@ -33,6 +33,7 @@ function formatSeconds(secs) {
 
 export default function FocusFlowSettings() {
   const {
+    user,
     accent, setAccent,
     theme, setTheme,
     alarmId, setAlarmId,
@@ -221,11 +222,11 @@ export default function FocusFlowSettings() {
               border: `1px solid ${c.border}`, marginBottom: 16,
             }}>
               <div style={{
-                width: 38, height: 38, background: activeHex + "22", color: activeHex,
-                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 600, flexShrink: 0,
-              }}>U</div>
-              <div style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>User</div>
+                    width: 38, height: 38, background: activeHex + "22", color: activeHex,
+                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 14, fontWeight: 600, flexShrink: 0,
+                  }}>{user?.name?.[0]?.toUpperCase() || 'U'}</div>
+                  <div style={{ fontSize: 14, color: c.text, fontWeight: 500 }}>{user?.name || 'User'}</div>
             </div>
             <button
               onClick={logout}
