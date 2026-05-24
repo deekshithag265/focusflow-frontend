@@ -1,13 +1,13 @@
 // extensionBridge.js - Add this to your React/web app
 
-const EXTENSION_ID ="aklicpolgbjeiiopochgaodbjpbikbhn" // Replace with actual ID
+const EXTENSION_ID =import.meta.env.VITE_EXTENSION_ID; // Replace with actual IDaklicpolgbjeiiopochgaodbjpbikbhn
 
 /**
  * Send a message to the Focus Blocker extension
  */
 function sendToExtension(message) {
   return new Promise((resolve, reject) => {
-    if (!chrome?.runtime?.sendMessage) {
+    if (typeof chrome === "undefined" || !chrome.runtime) {
       reject(new Error("Chrome extension API not available"));
       return;
     }

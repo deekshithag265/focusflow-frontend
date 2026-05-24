@@ -35,7 +35,7 @@
 
 // The extension injects this ID into the page when installed.
 // Must match the extension's ID in your manifest (or use runtime messaging).
-const EXTENSION_ID = "aklicpolgbjeiiopochgaodbjpbikbhn"; // ← replace after loading unpacked
+const EXTENSION_ID = import.meta.env.VITE_EXTENSION_ID; // ← replace after loading unpacked
 
 export class FocusBlockerBridge {
   constructor() {
